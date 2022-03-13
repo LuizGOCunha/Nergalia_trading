@@ -1,3 +1,5 @@
+from functools import total_ordering
+import math
 from functions import descrever_gramado, descrever_estrada, descrever_vila
 
 class Mapa:
@@ -71,54 +73,91 @@ class Vila:
     
 
 class Produto:
-    def __init__(self, nome_do_produto, preco_base):
+    def __init__(self, nome_do_produto, preco_base, quantidade):
         self.nome = nome_do_produto
         self.preco_base = preco_base
         self.preco_relativo = preco_base
+        self.quantidade = quantidade
+
+    def modificar_quantidade(self, modificador):
+        self.quantidade += modificador
+
+    def __str__(self):
+        return f"Um carregamento de {self.nome}. {self.quantidade} quilos."
+
+@total_ordering
+class Penias: 
+    def __init__(self, valor):
+        self.valor = round(valor, 2)
+
+    def __str__(self):
+        penias = math.floor(self.valor)
+        copones = int((self.valor - penias)*10)
+        return f"Em sua bolsa de moedas você tem {penias} penias e {copones} copones"
+    
+    def __eq__(self, outro):
+        return self.valor == outro.valor
+
+    def __lt__ (self, outro):
+        return self.valor < outro.valor
+
 
 
 class Jogador:
-    def __init__(self, coordenada_x, coordenada_y, mapa):
+    def __init__(self, coordenada_x, coordenada_y, mapa, *produtos):
         self.coordenada_x = coordenada_x
         self.coordenada_y = coordenada_y
         self.mapa_atual = mapa
         self.mapa_atual.executar_coordenada(coordenada_x, coordenada_y)
+        self.inventario = produtos
+
+    def mostrar_inventario(self):
+        for produtos in self.inventario:
+            print(produtos)
+
+    def modificar_inventario(self, item, quantidade):
+        pass
+
+    def coord_valida(self):
+        return 10 > self.coordenada_y >= 0 and 10 > self.coordenada_x >= 0
 
     def mover_norte(self):
         self.coordenada_y += 1
-        try:
+        if self.coord_valida():
             self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
-        except IndexError:
-            print("Nenhum lugar ao norte")
-            self.coordenada_y -= 1
             self.mapa_atual.passar_do_tempo
+        else:
+            print("Nenhum lugar ao Norte")
+            self.coordenada_y -= 1
+            
+        
 
     def mover_sul(self):
         self.coordenada_y -= 1
-        try:
+        if self.coord_valida():
             self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
-        except IndexError:
-            print("Nenhum lugar ao sul")
-            self.coordenada_y += 1
             self.mapa_atual.passar_do_tempo
+        else:
+            print("Nenhum lugar ao Sul")
+            self.coordenada_y += 1
 
     def mover_leste(self):
         self.coordenada_x +=1
-        try:
+        if self.coord_valida():
             self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
-        except IndexError:
-            print("Nenhum lugar ao leste")
-            self.coordenada_x -= 1
             self.mapa_atual.passar_do_tempo
+        else:
+            print("Nenhum lugar ao Leste")
+            self.coordenada_x -= 1
 
     def mover_oeste(self):
         self.coordenada_x -= 1
-        try:
+        if self.coord_valida():
             self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
-        except IndexError:
-            print("Nenhum lugar ao oeste")
-            self.coordenada_x += 1
             self.mapa_atual.passar_do_tempo
+        else:
+            print("Nenhum lugar ao Oeste")
+            self.coordenada_x += 1
 
    # def atualizar_mapa(self, mapa):
    #     self.mapa_atual = mapa

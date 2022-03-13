@@ -14,7 +14,7 @@ def descrever_vila():
         print('O velho franze o cenho, e lhe ignora')
 
 def descrever_estrada():
-    pass
+    print('Seus pés caminham em uma estrada segura')
 
 def assalto_de_estrada():
     print('Dois homens de face coberta puxam uma navalha e exigem seu dinheiro')
