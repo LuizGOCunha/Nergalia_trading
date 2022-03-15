@@ -20,7 +20,8 @@ key_bindings = {
     'd': jogador1.mover_leste,
     'a': jogador1.mover_oeste,
     'inv': jogador1.mostrar_inventario,
-    'exit': exit
+    'exit': exit,
+    'mapa': mapa,
 }
 
 while True:

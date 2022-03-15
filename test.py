@@ -25,7 +25,8 @@ grid = [
 
 
 for x_axis in grid:
-    string = ""
+    string = "*"
     for coordenate in x_axis:
         string += coordenate
+    string += "*"
     print(string)
