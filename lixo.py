@@ -30,3 +30,16 @@ for x_axis in grid:
         string += coordenate
     string += "*"
     print(string)
+
+
+
+
+
+
+
+
+    if 0 < y < len(self.grid):
+            return False
+        # fazemos o mesmo com o x
+        elif 0 < x < len(self.grid[y]):
+            return False

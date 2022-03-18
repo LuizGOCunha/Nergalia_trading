@@ -3,14 +3,18 @@ import math
 from operator import index
 from functions import descrever_gramado, descrever_estrada, descrever_vila
 from colorama import Fore, Style
+from copy import deepcopy
 
 class Mapa:
     def __init__(self, *villages):
         """A fim de fazer uma lista tridimensional, coloquei uma lista dentro de outra"""
         X = Gramado()
+        #X = lambda: copy.deepcopy(x)        
         E = Estrada()
+        #E = lambda: copy.deepcopy(e)
         arroz_vila1 = Produto("arroz", 0.5, 100)
         V = Vila("Vila1", arroz_vila1)
+        #V = lambda: copy.deepcopy(v)
         y9 = [X, X, X, X, X, X, X, X, X, X,]
         y8 = [X, X, V, E, E, X, X, X, X, X,]
         y7 = [X, X, X, X, E, X, X, X, X, X,]
@@ -22,7 +26,8 @@ class Mapa:
         y1 = [X, X, X, X, X, X, X, E, X, X,]
         y0 = [X, X, X, X, X, X, X, E, X, X,]
         self.grid = [y9,y8,y7,y6,y5,y4,y3,y2,y1,y0]
-        """listamos e guardamos as vilas presentes no mapa"""
+                    
+        # listamos e guardamos as vilas presentes no mapa
         self.villages = []
         for village in villages:
             self.villages.append(village)
@@ -32,16 +37,16 @@ class Mapa:
         for village in self.villages:
             village.produzir()
             village.atualizar_precos()
-        
-    def executar_coordenada(self, x, y):
-        """Função a ser chamada quando o jogador entra na devida coordenada"""
-        y_grid = self.grid[y]
-        coord_completa = y_grid[x]
-        if type(coord_completa) == tuple or type(coord_completa) == list:
-            for funcoes in coord_completa:
-                funcoes()
-        else:
-            coord_completa()
+            
+    def coordenada_valida(self, x, y):
+        # Checamos se o nosso Y está fora do range da grid (Maior que o maximo ou menor que o minimo)
+        try:
+            if self.grid[y][x]:
+                pass
+        except IndexError:
+            return False
+        # se não for o caso, retornamos true  
+        return True
 
     def acrescentar_objeto(self, x, y, objeto):
         self.grid[y][x] = (self.grid[y][x], objeto)
@@ -88,7 +93,7 @@ class Vila:
         
     def interagir_com_a_vila(self):
         """Aqui será o prompt de interação com a vila (comprar, vender, etc)"""
-        pass
+        print("Você passa por uma vila amigável")
 
     def __call__(self):
         """dunder utilizado para que o objeto vila possa ser chamado pelo executar_coordenada"""
@@ -153,7 +158,7 @@ class Gramado:
 
 class Estrada:
     def __init__(self):
-        pass
+        self.primeira_vias_call_flag = False      
 
     def __call__(self):
         print('Seus pés caminham em uma estrada segura')
@@ -167,11 +172,11 @@ class Estrada:
 
 
 class Jogador:
-    def __init__(self, coordenada_x, coordenada_y, mapa, *produtos):
-        self.coordenada_x = coordenada_x
-        self.coordenada_y = coordenada_y
+    def __init__(self, coord_x, coord_y, mapa, *produtos):
+        self.coord_x = coord_x
+        self.coord_y = coord_y
         self.mapa_atual = mapa
-        self.mapa_atual.executar_coordenada(coordenada_x, coordenada_y)
+        self.executar_coordenada(coord_x, coord_y)
         self.inventario = produtos
 
     def mostrar_inventario(self):
@@ -182,48 +187,82 @@ class Jogador:
         pass
 
     def coord_valida(self):
-        return 10 > self.coordenada_y >= 0 and 10 > self.coordenada_x >= 0
+        return 10 > self.coord_y >= 0 and 10 > self.coord_x >= 0
+
+    def retornar_coordenada(self, x, y):
+        y_grid = self.mapa_atual.grid[y]
+        coord_completa = y_grid[x]
+        return coord_completa
+
+    def executar_coordenada(self, x, y):
+        """Função a ser chamada quando o jogador entra na devida coordenada"""
+        y_grid = self.mapa_atual.grid[y]
+        coord_completa = y_grid[x]
+        coord_completa()
+        if type(coord_completa) == Estrada:
+            self.verificar_caminho()
+
+    def verificar_caminho(self):
+        caminho = "Essa estrada tem caminhos para "
+        if type(self.retornar_coordenada(self.coord_x, self.coord_y+1)) == Estrada:
+            caminho += "Norte, "
+        if type(self.retornar_coordenada(self.coord_x, self.coord_y-1)) == Estrada:
+            caminho += "Sul, "
+        if type(self.retornar_coordenada(self.coord_x+1, self.coord_y)) == Estrada:
+            caminho += "Leste, "
+        if type(self.retornar_coordenada(self.coord_x-1, self.coord_y)) == Estrada:
+            caminho += "Oeste, "
+        caminho = caminho[:-2]
+        print(caminho)
+
+    def arredores(self):
+        """A intenção aqui é criar um dicionario dos arredores atuais"""
+        arredores = {
+        "norte":self.mapa_atual(self.coord_x,self.coord_y+1),
+        "sul":self.mapa_atual(self.coord_x,self.coord_y-1),
+        "leste":self.mapa_atual(self.coord_x+1,self.coord_y),
+        "oeste":self.mapa_atual(self.coord_x-1,self.coord_y),
+}
+        return arredores
 
     def mover_norte(self):
-        self.coordenada_y += 1
+        self.coord_y += 1
         if self.coord_valida():
-            self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
+            self.executar_coordenada(self.coord_x, self.coord_y)
             self.mapa_atual.passar_do_tempo
         else:
             print("Nenhum lugar ao Norte")
-            self.coordenada_y -= 1
+            self.coord_y -= 1
 
     def __str__(self):
-        return "JJ"
-            
-        
+        return "JJ"    
 
     def mover_sul(self):
-        self.coordenada_y -= 1
+        self.coord_y -= 1
         if self.coord_valida():
-            self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
+            self.executar_coordenada(self.coord_x, self.coord_y)
             self.mapa_atual.passar_do_tempo
         else:
             print("Nenhum lugar ao Sul")
-            self.coordenada_y += 1
+            self.coord_y += 1
 
     def mover_leste(self):
-        self.coordenada_x +=1
+        self.coord_x +=1
         if self.coord_valida():
-            self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
+            self.executar_coordenada(self.coord_x, self.coord_y)
             self.mapa_atual.passar_do_tempo
         else:
             print("Nenhum lugar ao Leste")
-            self.coordenada_x -= 1
+            self.coord_x -= 1
 
     def mover_oeste(self):
-        self.coordenada_x -= 1
+        self.coord_x -= 1
         if self.coord_valida():
-            self.mapa_atual.executar_coordenada(self.coordenada_x, self.coordenada_y)
+            self.executar_coordenada(self.coord_x, self.coord_y)
             self.mapa_atual.passar_do_tempo
         else:
             print("Nenhum lugar ao Oeste")
-            self.coordenada_x += 1
+            self.coord_x += 1
 
     def __getitem__(self,index):
         lista_gambiarra = [self]
