@@ -1,5 +1,9 @@
 from functions import descrever_gramado, assalto_de_estrada, descrever_vila
-from classes import Mapa, Penias, Vila, Jogador, Produto
+from Mapa import Mapa
+from Jogador import Jogador
+from Vila import Vila
+from classes import Produto, Penias
+
 
 arroz_vila1 = Produto("arroz", 0.5, 100, 0.1)
 peixe_vila2 = Produto("peixe", 2.2, 18, 5)
