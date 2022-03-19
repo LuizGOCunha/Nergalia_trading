@@ -8,18 +8,18 @@ from copy import deepcopy
 class Mapa:
     def __init__(self, *villages):
         """A fim de fazer uma lista tridimensional, coloquei uma lista dentro de outra"""
+        self.villages = villages
         X = Gramado()
         #X = lambda: copy.deepcopy(x)        
         E = Estrada()
         #E = lambda: copy.deepcopy(e)
-        arroz_vila1 = Produto("arroz", 0.5, 100)
-        V = Vila("Vila1", arroz_vila1)
-        #V = lambda: copy.deepcopy(v)
+        V = self.villages[0]
+        v = self.villages[1]
         y9 = [X, X, X, X, X, X, X, X, X, X,]
         y8 = [X, X, V, E, E, X, X, X, X, X,]
         y7 = [X, X, X, X, E, X, X, X, X, X,]
         y6 = [X, X, X, X, E, X, X, X, X, X,]
-        y5 = [X, V, E, E, E, E, E, E, V, X,]
+        y5 = [X, V, E, E, E, E, E, E, v, X,]
         y4 = [X, X, E, X, X, X, X, X, X, X,]
         y3 = [X, X, E, X, X, X, X, X, X, X,]
         y2 = [X, X, E, E, E, E, E, E, X, X,]
@@ -28,9 +28,7 @@ class Mapa:
         self.grid = [y9,y8,y7,y6,y5,y4,y3,y2,y1,y0]
                     
         # listamos e guardamos as vilas presentes no mapa
-        self.villages = []
-        for village in villages:
-            self.villages.append(village)
+        
 
     def passar_do_tempo(self):
         """Uma função para puxar todos os métodos do que deve acontecer quando passar o tempo"""
@@ -71,29 +69,35 @@ class Mapa:
         
 
 class Vila:
-    def __init__(self, nome_da_vila, produto_produzido):
+    def __init__(self, nome_da_vila, penias, produto_produzido):
         self.nome = nome_da_vila
         self.produto = produto_produzido
         self.preco_produto_relativo = self.produto.preco_base/(self.produto.quantidade/100)
-        self.financas = 50
+        self.financas = penias
 
+    # Esse método provavelmente deveria pertencer ao produto, lembrar de modificar apropriadamente
     def produzir(self, praga=False, enchente=False):
         """metodo a ser chamado para aumentar o inventario da vila com o tempo (ou não)"""
         if praga:
-            self.inventario -= 1
+            self.produto.quantidade -= 1
         elif enchente: 
             pass
         else: 
-            self.inventario += 1
+            self.produto.quantidade += 3
+        # Aqui calculamos a porcentagem perdida por invalidade (apodrecimento)
+        self.produto.quantidade -= self.produto.quantidade*(self.produto.invalidade_rate/100)
+        print(self.nome, self.financas, self.preco_produto_relativo, self.produto)
 
     def atualizar_precos(self):
         """Aqui atualizamos o preço do produto da vila com base em oferta e demanda
             Futuramente também deve se atualizar o preço dos produtos que a vila pede"""
-        self.preco_produto_relativo = self.produto.preco_base/(self.inventario/100)
+        self.preco_produto_relativo = self.produto.preco_base/(self.produto.quantidade/100)
+        print(self.nome, self.financas, self.preco_produto_relativo, self.produto)
         
     def interagir_com_a_vila(self):
         """Aqui será o prompt de interação com a vila (comprar, vender, etc)"""
-        print("Você passa por uma vila amigável")
+        print(f"Você passa por uma vila amigável de nome {self.nome}")
+        print(self.produto, self.financas, self.preco_produto_relativo)
 
     def __call__(self):
         """dunder utilizado para que o objeto vila possa ser chamado pelo executar_coordenada"""
@@ -108,11 +112,13 @@ class Vila:
     
 
 class Produto:
-    def __init__(self, nome_do_produto, preco_base, quantidade):
+    def __init__(self, nome_do_produto, preco_base, quantidade, quilos_perdidos_por_apodrecimento):
         self.nome = nome_do_produto
         self.preco_base = preco_base
         self.preco_relativo = preco_base
         self.quantidade = quantidade
+        # Isso é a porcentagem (0-100) de quilos perdidos por invalidade a cada dia
+        self.invalidade_rate = quilos_perdidos_por_apodrecimento
 
     def modificar_quantidade(self, modificador):
         self.quantidade += modificador
@@ -132,13 +138,19 @@ class Penias:
     def __str__(self):
         penias = math.floor(self.valor)
         copones = int((self.valor - penias)*10)
-        return f"Em sua bolsa de moedas você tem {penias} penias e {copones} copones"
+        string = f"Em sua bolsa de moedas você tem {penias} penias"
+        if copones:
+            string += f"e {copones} copones"
+        return string
     
     def __eq__(self, outro):
         return self.valor == outro.valor
 
     def __lt__ (self, outro):
         return self.valor < outro.valor
+
+    def __add__(self, outro):
+        return Penias(self.valor + outro.valor)
 
 
 class Gramado:
@@ -172,7 +184,7 @@ class Estrada:
 
 
 class Jogador:
-    def __init__(self, coord_x, coord_y, mapa, *produtos):
+    def __init__(self, coord_x, coord_y, mapa, **produtos):
         self.coord_x = coord_x
         self.coord_y = coord_y
         self.mapa_atual = mapa
@@ -190,6 +202,7 @@ class Jogador:
         return 10 > self.coord_y >= 0 and 10 > self.coord_x >= 0
 
     def retornar_coordenada(self, x, y):
+        # if self.mapa_atual.coordenada_valida(x,y):
         y_grid = self.mapa_atual.grid[y]
         coord_completa = y_grid[x]
         return coord_completa
@@ -222,35 +235,37 @@ class Jogador:
         "sul":self.mapa_atual(self.coord_x,self.coord_y-1),
         "leste":self.mapa_atual(self.coord_x+1,self.coord_y),
         "oeste":self.mapa_atual(self.coord_x-1,self.coord_y),
-}
+        }
         return arredores
 
     def mover_norte(self):
-        self.coord_y += 1
+        self.coord_y -= 1
         if self.coord_valida():
             self.executar_coordenada(self.coord_x, self.coord_y)
-            self.mapa_atual.passar_do_tempo
+            print("whut")
+            self.mapa_atual.passar_do_tempo()
+            
         else:
             print("Nenhum lugar ao Norte")
-            self.coord_y -= 1
+            self.coord_y += 1
 
     def __str__(self):
         return "JJ"    
 
     def mover_sul(self):
-        self.coord_y -= 1
+        self.coord_y += 1
         if self.coord_valida():
             self.executar_coordenada(self.coord_x, self.coord_y)
-            self.mapa_atual.passar_do_tempo
+            self.mapa_atual.passar_do_tempo()
         else:
             print("Nenhum lugar ao Sul")
-            self.coord_y += 1
+            self.coord_y -= 1
 
     def mover_leste(self):
         self.coord_x +=1
         if self.coord_valida():
             self.executar_coordenada(self.coord_x, self.coord_y)
-            self.mapa_atual.passar_do_tempo
+            self.mapa_atual.passar_do_tempo()
         else:
             print("Nenhum lugar ao Leste")
             self.coord_x -= 1
@@ -259,10 +274,37 @@ class Jogador:
         self.coord_x -= 1
         if self.coord_valida():
             self.executar_coordenada(self.coord_x, self.coord_y)
-            self.mapa_atual.passar_do_tempo
+            self.mapa_atual.passar_do_tempo()
         else:
             print("Nenhum lugar ao Oeste")
             self.coord_x += 1
+
+    def vender(self,vila, quantidade, produto):
+        # É necessario padronizar os inventarios para que isso funcione. Talvez transformá-los em dict seja o ideal
+        if vila.financas - vila.preco_produto_relativo*quantidade < 0:
+            print("Não há moeda suficiente")
+        else: 
+            vila.financas -= vila.preco_produto_relativo*quantidade
+            self.inventario["moedas"] += vila.preco_produto_relativo*quantidade
+            vila.produto.quantidade += quantidade
+            self.inventario[f"{produto.nome}"].quantidade -= quantidade
+
+    def ver_mapa(self):
+        """Aqui é onde printamos na tela a representação do mapa, utilizando o dunder __str__ de nossos objetos"""
+        # Aqui quero printar o mapa, mas printar a localização do jogador junto
+        # Não sei pq ainda não funciona
+        print("**********************")
+        for y, y_axis in enumerate(self.mapa_atual.grid):
+            string = "*"
+            for x, x_axis in enumerate(y_axis):
+                # aaaaah, é pq x_axis é um objeto, não uma posição. Depois ajeita isso.
+                if self.coord_x == x and self.coord_y == y:
+                    string += self.__str__()
+                else:
+                    string += x_axis[-1].__str__()
+            string += "*"
+            print(string)
+        print("**********************")
 
     def __getitem__(self,index):
         lista_gambiarra = [self]

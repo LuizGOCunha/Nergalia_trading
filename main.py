@@ -1,12 +1,16 @@
 from functions import descrever_gramado, assalto_de_estrada, descrever_vila
 from classes import Mapa, Penias, Vila, Jogador, Produto
 
-mapa = Mapa()
-arroz_jogador = Produto("arroz", 0.5, 50)
-peixe_jogador = Produto("peixe", 1, 20)
+arroz_vila1 = Produto("arroz", 0.5, 100, 0.1)
+peixe_vila2 = Produto("peixe", 2.2, 18, 5)
+V = Vila("Vila1", 30, arroz_vila1)
+v = Vila("Vila2", 45, peixe_vila2)
+mapa = Mapa(V,v)
+arroz_jogador = Produto("arroz", 0.5, 50, 0.1)
+peixe_jogador = Produto("peixe", 1, 20, 5)
 moedas_jogador = Penias(15.50)
 
-jogador1 = Jogador(0 ,0 ,mapa ,moedas_jogador ,arroz_jogador, peixe_jogador)
+jogador1 = Jogador(0 ,0 ,mapa ,moedas = moedas_jogador ,arroz=arroz_jogador, peixe=peixe_jogador)
 
 print("""
 W = norte
@@ -21,7 +25,7 @@ key_bindings = {
     'a': jogador1.mover_oeste,
     'inv': jogador1.mostrar_inventario,
     'exit': exit,
-    'mapa': mapa,
+    'mapa': jogador1.ver_mapa,
 }
 
 while True:
